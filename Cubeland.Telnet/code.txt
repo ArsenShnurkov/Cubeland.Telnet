@@ -1,0 +1,115 @@
+﻿List<byte> tbuf = new List<byte>();
+                // TODO note that we're wiping out the ReceptorBuffer here.
+                for (int xx = 0; xx < args.BytesTransferred; xx++) {
+                    tbuf.Add(ReceptorBuffer[xx]);
+                }
+
+                Array.Clear(ReceptorBuffer, 0, ReceptorBuffer.Length);
+                List<BufferPayload> lbl = new List<BufferPayload>();
+               
+                BufferPayload pl = new BufferPayload() { Key = KeybdKeys.NO_SUCH_KEY };
+                
+                // walk the buffer, looking for a special key
+
+                
+
+
+				if (args.BytesTransferred > 0) {
+                    if (tbuf[0] == NvtCodes.IAC) {
+                        String s = "";
+                        foreach (byte b in tbuf) {
+                            s = s + NvtCodes.GetNvtString(b) + "|";
+                        }
+                        Logger.Log(s);
+
+
+
+                        if (args.BytesTransferred == 9 && tbuf[0] == NvtCodes.IAC && tbuf[1] == NvtCodes.SB && tbuf[2] == NvtCodes.NAWS && tbuf[7] == NvtCodes.IAC && tbuf[8] == NvtCodes.SE) {
+                            // IAC|SB|NAWS|0|93|0|32|IAC|SE|
+
+                            int ScreenX;
+                            int ScreenY;
+                            if (BitConverter.IsLittleEndian) {
+                                ScreenX = Convert.ToInt32(BitConverter.ToInt16(new byte[] { tbuf[4], tbuf[3] }, 0));
+                                ScreenY = Convert.ToInt32(BitConverter.ToInt16(new byte[] { tbuf[6], tbuf[5] }, 0));
+                            } else {
+                                ScreenX = Convert.ToInt32(BitConverter.ToInt16(new byte[] { tbuf[3], tbuf[4] }, 0));
+                                ScreenY = Convert.ToInt32(BitConverter.ToInt16(new byte[] { tbuf[5], tbuf[6] }, 0));
+                            }
+                            Logger.Log("ID " + NetClientID + " now has scrsz " + ScreenX + "x" + ScreenY);
+                        }
+
+                        if(args.BytesTransferred == 3 && tbuf[1] != NvtCodes.SB){
+                            if (tbuf[1] == NvtCodes.WILL && tbuf[2] == NvtCodes.NAWS) {
+								Byte[] sbuf = new byte[3];
+                                sbuf[0] = NvtCodes.IAC;
+                                sbuf[1] = NvtCodes.DO;
+                                sbuf[2] = NvtCodes.NAWS;
+                                
+                                Logger.Log("Server: Reqd DO NAWS");
+                            }
+                        }
+                    }
+                }
+                
+                
+                
+                
+      
+00000000000000000000000000000000000000000000000000000000000000000000000000000000
+11111111111111111111111111111111111111111111111111111111111111111111111111111111
++------------------------------------------------------------------------------+
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
+|222222222222222222222222222222222222222222222222222222222222222222222222222222|
++------------------------------------------------------------------------------+
+33333333333333333333333333333333333333333333333333333333333333333333333333333333
+
+Grid.AddNewCell(0,0,1,80, MenuBorder.NONE);
+Grid[0].Menu = new TelnetMenu(1,80);
+Grid[0].Menu.Selectable = false;
+Grid.AddNewCell(0,1,1,80, MenuBorder.NONE);
+Grid[1].Menu = new TelnetMenu(1,80);
+Grid[1].Menu.Selectable = false;
+Grid.AddNewCell(0,2,22,80, MenuBorder.SINGLE);
+Grid[2].Menu = new TelnetMenu(20,78);
+Grid.AddNewCell(0,24,1,80, MenuBorder.NONE);
+Grid[3].Menu = new TelnetMenu(1,80);
+
+// Grid[3] gets all keys not already defined
+Grid.MapKeys(Grid[3]);
+
+// Grid[2] gets special keys to page up/down the event list
+Grid.MapKeys(KeybdKeys.PGUP, Grid[2])
+Grid.MapKeys(KeybdKeys.PGDN, Grid[2]);
+Grid.MapKeys(KeybdKeys.UP, Grid[2]);
+Grid.MapKeys(KeybdKeys.DOWN, Grid[2]);
+Grid.MapKeys(KeybdKeys.LEFT, Grid[2]);
+Grid.MapKeys(KeybdKeys.RIGHT, Grid[2]);
+
+// Grid gets the function keys to handle break to new menus
+Grid.MapKeys(KeybdKeys.F1);
+Grid.MapKeys(KeybdKeys.F2);
+
+
+if(this.Grid != null){
+	this.GridStack.Push(this.Grid);
+}
+this.Grid = Grid;
